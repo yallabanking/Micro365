@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>داشبورد التسويق الميداني</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#12211f;
+    --primary:#0B3D3A;
+    --primary-light:#155e59;
+    --gold:#C9A227;
+    --gold-light:#e6c65c;
+    --bg:#F6F4EE;
+    --card:#FFFFFF;
+    --line:#E7E2D3;
+    --muted:#6b7570;
+    --danger:#B3261E;
+    --success:#2E7D32;
+    --blue:#2E6FB3;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Tajawal',sans-serif;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(201,162,39,0.08), transparent 40%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:40px;
+  }
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{
+    background:var(--primary);
+    color:#fff;
+    padding:16px 20px;
+    position:sticky;top:0;z-index:30;
+    box-shadow:0 2px 10px rgba(0,0,0,.12);
+  }
+  .topbar-inner{
+    max-width:1180px;margin:0 auto;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand .mark{
+    width:34px;height:34px;border-radius:9px;
+    background:linear-gradient(135deg,var(--gold),var(--gold-light));
+    display:flex;align-items:center;justify-content:center;
+    font-weight:900;color:var(--primary);font-size:16px;flex-shrink:0;
+  }
+  .brand h1{font-size:16px;margin:0;font-weight:700;}
+  .brand .sub{font-size:11px;opacity:.75;margin-top:2px;}
+  .topbar-actions{display:flex;align-items:center;gap:10px;}
+  .updated{font-size:11px;opacity:.8;}
+  .btn-refresh{
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.25);
+    color:#fff;border-radius:9px;
+    padding:8px 14px;font-family:inherit;font-size:12.5px;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;gap:6px;
+  }
+  .btn-refresh:disabled{opacity:.6;cursor:wait;}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px;}
+
+  /* ---------- LOADING / ERROR ---------- */
+  .state-box{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:40px 20px;text-align:center;color:var(--muted);font-size:13.5px;
+  }
+  .spinner{
+    width:26px;height:26px;border:3px solid rgba(11,61,58,.15);
+    border-top-color:var(--primary);border-radius:50%;
+    animation:spin .7s linear infinite;margin:0 auto 14px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .error-box{color:var(--danger);}
+
+  .config-box{
+    background:#FBECEB;border:1px solid #f0c9c6;color:var(--danger);
+    border-radius:var(--radius);padding:16px 18px;font-size:13px;line-height:1.8;margin-bottom:18px;
+  }
+  .config-box code{background:#fff;padding:1px 6px;border-radius:5px;font-size:12px;}
+
+  /* ---------- FILTERS ---------- */
+  .filters{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin-bottom:20px;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+  }
+  .filters .field{display:flex;flex-direction:column;gap:5px;}
+  .filters label{font-size:11.5px;font-weight:700;color:var(--primary);}
+  .filters select, .filters input{
+    padding:9px 10px;border:1.5px solid var(--line);border-radius:9px;
+    font-family:inherit;font-size:13px;background:#FCFBF8;color:var(--ink);
+  }
+  .filters select:focus, .filters input:focus{outline:none;border-color:var(--primary-light);}
+
+  /* ---------- KPI GRID ---------- */
+  .kpi-grid{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;
+  }
+  .kpi-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;position:relative;overflow:hidden;
+  }
+  .kpi-card::before{
+    content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:4px;
+    background:var(--accent,var(--gold));
+  }
+  .kpi-card .label{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:8px;}
+  .kpi-card .value{font-size:24px;font-weight:900;color:var(--primary);}
+  .kpi-card .subvalue{font-size:11.5px;color:var(--muted);margin-top:4px;}
+
+  /* ---------- SECTION / CHART CARDS ---------- */
+  .section-title{
+    font-size:15px;font-weight:900;color:var(--primary);
+    margin:26px 0 12px;display:flex;align-items:center;gap:8px;
+  }
+  .section-title .bar{width:5px;height:16px;background:var(--gold);border-radius:3px;}
+
+  .chart-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;}
+  .chart-grid.thirds{grid-template-columns:1fr 1fr 1fr;}
+  .chart-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;
+  }
+  .chart-card h3{margin:0 0 4px;font-size:13.5px;font-weight:800;color:var(--primary);}
+  .chart-card .chart-desc{font-size:11px;color:var(--muted);margin-bottom:12px;}
+  .chart-card .canvas-wrap{position:relative;height:230px;}
+  .chart-card .canvas-wrap.tall{height:280px;}
+  .empty-chart{
+    display:flex;align-items:center;justify-content:center;height:100%;
+    color:var(--muted);font-size:12.5px;
+  }
+
+  /* ---------- LEADERBOARD ---------- */
+  .leaderboard{list-style:none;margin:0;padding:0;}
+  .leaderboard li{
+    display:flex;align-items:center;gap:10px;padding:9px 0;
+    border-bottom:1px solid var(--line);font-size:13px;
+  }
+  .leaderboard li:last-child{border-bottom:none;}
+  .leaderboard .rank{
+    width:22px;height:22px;border-radius:50%;background:rgba(11,61,58,.08);
+    color:var(--primary);font-size:11px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .leaderboard .name{flex:1;font-weight:700;color:var(--ink);}
+  .leaderboard .count{font-weight:900;color:var(--gold);}
+  .bar-track{
+    flex:1;height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin-top:4px;
+  }
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:6px;}
+  .leaderboard-item{display:flex;flex-direction:column;gap:4px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .leaderboard-item:last-child{border-bottom:none;}
+  .leaderboard-item .row1{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;}
+
+  /* ---------- TABLE ---------- */
+  .table-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;margin-top:14px;
+  }
+  .table-card .table-head{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;
+  }
+  .table-card h3{margin:0;font-size:13.5px;font-weight:800;color:var(--primary);}
+  .count-pill{
+    background:rgba(11,61,58,.08);color:var(--primary);font-size:11.5px;font-weight:700;
+    padding:4px 10px;border-radius:999px;
+  }
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  thead th{
+    text-align:right;color:var(--muted);font-weight:700;font-size:11.5px;
+    padding:8px 8px;border-bottom:2px solid var(--line);white-space:nowrap;
+  }
+  tbody td{padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody tr:last-child td{border-bottom:none;}
+  .badge{
+    padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700;display:inline-block;
+  }
+  .badge.new{background:#E9F5EA;color:var(--success);}
+  .badge.renew{background:#EAF1FB;color:var(--blue);}
+  .badge.role-finance{background:#FBF3DC;color:#8a6d1c;}
+  .badge.role-senior{background:#E4F0EF;color:var(--primary);}
+  .badge.role-geo{background:#F3E9FB;color:#6a3ba0;}
+  .loc-link{color:var(--primary-light);font-size:11.5px;text-decoration:underline;}
+  .table-scroll{overflow-x:auto;}
+
+  /* mobile card list (shown instead of table on small screens) */
+  .mobile-cards{display:none;}
+  .entry-card{
+    background:#FCFBF8;border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;margin-bottom:10px;
+  }
+  .entry-card .top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .entry-card .cname{font-weight:800;font-size:13.5px;color:var(--ink);}
+  .entry-card .meta{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:6px;}
+  .entry-card .meta span b{color:var(--ink);font-weight:700;}
+
+  .footnote{text-align:center;font-size:11px;color:var(--muted);margin-top:26px;}
+
+  .hidden{display:none !important;}
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 880px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .chart-grid, .chart-grid.thirds{grid-template-columns:1fr;}
+    .filters{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width: 620px){
+    .topbar-inner{flex-direction:row;}
+    .brand h1{font-size:14.5px;}
+    .updated{display:none;}
+    .kpi-card .value{font-size:20px;}
+    .table-scroll{display:none;}
+    .mobile-cards{display:block;}
+    .filters{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="mark">T</div>
+      <div>
+        <h1>داشبورد التسويق الميداني</h1>
+        <div class="sub">تقارير مباشرة من Google Sheets</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="updated" id="updatedAt">--</span>
+      <button class="btn-refresh" id="refreshBtn" onclick="loadData()">↻ تحديث</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div id="configBox" class="config-box hidden">
+    لم يتم ربط الداشبورد برابط الـ Web App الخاص بشيت جوجل. افتح ملف الداشبورد وضع رابطك داخل المتغير
+    <code>APPS_SCRIPT_URL</code> في أعلى الكود.
+  </div>
+
+  <div id="loadingBox" class="state-box">
+    <div class="spinner"></div>
+    جاري تحميل البيانات من الشيت...
+  </div>
+
+  <div id="errorBox" class="state-box error-box hidden"></div>
+
+  <div id="dashboardContent" class="hidden">
+
+    <!-- FILTERS -->
+    <div class="filters">
+      <div class="field">
+        <label>الفئة الوظيفية</label>
+        <select id="filterRole" onchange="applyFilters()">
+          <option value="all">الكل</option>
+          <option value="تمويل">مسؤول تمويل</option>
+          <option value="مسئول اول">مسئول أول</option>
+          <option value="مسئول جغرافي">مسئول جغرافي</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>نوع العميل</label>
+        <select id="filterClientType" onchange="applyFilters()">
+          <option value="all">الكل</option>
+          <option value="جديد">جديد</option>
+          <option value="تجديد">تجديد</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>من تاريخ</label>
+        <input type="date" id="filterFrom" onchange="applyFilters()">
+      </div>
+      <div class="field">
+        <label>إلى تاريخ</label>
+        <input type="date" id="filterTo" onchange="applyFilters()">
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="section-title"><span class="bar"></span> نظرة عامة</div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>حركة العملاء عبر الوقت</h3>
+        <div class="chart-desc">عدد العملاء المسجّلين يوميًا لكل الفئات</div>
+        <div class="canvas-wrap tall"><canvas id="trendChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>التوزيع حسب الفئة الوظيفية</h3>
+        <div class="chart-desc">نسبة العملاء لكل فئة</div>
+        <div class="canvas-wrap tall"><canvas id="roleChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="chart-grid thirds" style="margin-top:14px;">
+      <div class="chart-card">
+        <h3>نوع العميل</h3>
+        <div class="chart-desc">جديد مقابل تجديد</div>
+        <div class="canvas-wrap"><canvas id="clientTypeChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>نوع التسويق</h3>
+        <div class="chart-desc">فئة مسؤول التمويل فقط</div>
+        <div class="canvas-wrap" id="marketingTypeWrap"><canvas id="marketingTypeChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>المبالغ الإجمالية</h3>
+        <div class="chart-desc">متوقع مقابل منصرف (جنيه)</div>
+        <div class="canvas-wrap"><canvas id="amountsChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div class="section-title"><span class="bar"></span> أداء الموظفين</div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>الأكثر نشاطًا (عدد العملاء)</h3>
+        <div class="chart-desc">ترتيب الموظفين حسب عدد العملاء المسجّلين</div>
+        <div id="leaderboardList"></div>
+      </div>
+      <div class="chart-card">
+        <h3>الزيارات الميدانية المحدد لها موقع</h3>
+        <div class="chart-desc">عدد الزيارات التي تم تسجيل إحداثياتها</div>
+        <div class="canvas-wrap"><canvas id="visitsChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="table-head">
+        <h3>آخر العمليات المسجّلة</h3>
+        <span class="count-pill" id="rowCountPill">0 عملية</span>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>التاريخ</th>
+              <th>الفئة</th>
+              <th>الموظف</th>
+              <th>العميل</th>
+              <th>الهاتف</th>
+              <th>النوع</th>
+              <th>المبلغ</th>
+              <th>الموقع</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div class="mobile-cards" id="mobileCards"></div>
+    </div>
+
+    <div class="footnote">آخر تحديث للبيانات معروض أعلى الصفحة — اضغط "تحديث" لجلب أحدث البيانات من الشيت</div>
+  </div>
+
+</div>
+
+<script>
+/* ====================== CONFIGURATION ======================
+   ضع نفس رابط الـ Web App المستخدم في صفحة التسويق
+================================================================ */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxo_dEukCmS1MMIex4Z5HssQKOkxufUkCDGqZ_cbWo1amiFP0UBoejvXex3jNKaiFI32g/exec";
+
+const COLORS = {
+  primary:'#0B3D3A', primaryLight:'#155e59', gold:'#C9A227', goldLight:'#e6c65c',
+  blue:'#2E6FB3', success:'#2E7D32', danger:'#B3261E', muted:'#6b7570',
+  purple:'#6a3ba0'
+};
+
+let RAW = { finance:[], seniorOfficer:[], geoOfficer:[], employees:[] };
+let FILTERED = { finance:[], seniorOfficer:[], geoOfficer:[] };
+let charts = {};
+
+function el(id){ return document.getElementById(id); }
+function show(id){ el(id).classList.remove('hidden'); }
+function hide(id){ el(id).classList.add('hidden'); }
+
+async function loadData(){
+  if(APPS_SCRIPT_URL.includes("PASTE_YOUR_WEB_APP_URL_HERE")){
+    hide('loadingBox'); hide('errorBox'); hide('dashboardContent');
+    show('configBox');
+    return;
+  }
+  hide('configBox'); hide('errorBox'); hide('dashboardContent');
+  show('loadingBox');
+
+  const btn = el('refreshBtn');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ جاري التحميل...'; }
+
+  try{
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getDashboardData`);
+    const data = await res.json();
+
+    if(data.status !== 'success'){
+      throw new Error(data.message || 'فشل تحميل البيانات');
+    }
+
+    RAW.finance = data.finance || [];
+    RAW.seniorOfficer = data.seniorOfficer || [];
+    RAW.geoOfficer = data.geoOfficer || [];
+    RAW.employees = data.employees || [];
+
+    el('updatedAt').textContent = 'آخر تحديث: ' + new Date(data.generatedAt).toLocaleString('ar-EG');
+
+    hide('loadingBox');
+    show('dashboardContent');
+    applyFilters();
+  }catch(err){
+    hide('loadingBox');
+    el('errorBox').textContent = 'تعذر تحميل البيانات من الشيت: ' + err.message;
+    show('errorBox');
+  }finally{
+    if(btn){ btn.disabled = false; btn.innerHTML = '↻ تحديث'; }
+  }
+}
+
+/* ---------- FILTERING ---------- */
+function withinDateRange(ts, from, to){
+  if(!ts) return false;
+  const d = new Date(ts);
+  if(isNaN(d)) return false;
+  if(from && d < new Date(from)) return false;
+  if(to){
+    const toEnd = new Date(to);
+    toEnd.setHours(23,59,59,999);
+    if(d > toEnd) return false;
+  }
+  return true;
+}
+
+function applyFilters(){
+  const role = el('filterRole').value;
+  const clientType = el('filterClientType').value;
+  const from = el('filterFrom').value;
+  const to = el('filterTo').value;
+
+  function filterSet(rows){
+    return rows.filter(r=>{
+      if(clientType !== 'all' && r.clientType !== clientType) return false;
+      if((from || to) && !withinDateRange(r.timestamp, from, to)) return false;
+      return true;
+    });
+  }
+
+  FILTERED.finance = (role === 'all' || role === 'تمويل') ? filterSet(RAW.finance) : [];
+  FILTERED.seniorOfficer = (role === 'all' || role === 'مسئول اول') ? filterSet(RAW.seniorOfficer) : [];
+  FILTERED.geoOfficer = (role === 'all' || role === 'مسئول جغرافي') ? filterSet(RAW.geoOfficer) : [];
+
+  renderAll();
+}
+
+/* ---------- HELPERS ---------- */
+function num(v){ const n = parseFloat(v); return isNaN(n) ? 0 : n; }
+function fmt(n){ return Math.round(n).toLocaleString('ar-EG'); }
+function esc(v){
+  return String(v ?? '').replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+}
+
+function allRowsTagged(){
+  const f = FILTERED.finance.map(r=>({...r, _role:'تمويل', _amount:num(r.expectedAmount)}));
+  const s = FILTERED.seniorOfficer.map(r=>({...r, _role:'مسئول اول', _amount:num(r.disbursedAmount)}));
+  const g = FILTERED.geoOfficer.map(r=>({...r, _role:'مسئول جغرافي', _amount:num(r.disbursedAmount)}));
+  return [...f, ...s, ...g].sort((a,b)=> new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+/* ---------- RENDER ---------- */
+function renderAll(){
+  const all = allRowsTagged();
+  renderKPIs(all);
+  renderTrendChart(all);
+  renderRoleChart();
+  renderClientTypeChart(all);
+  renderMarketingTypeChart();
+  renderAmountsChart();
+  renderLeaderboard(all);
+  renderVisitsChart(all);
+  renderTable(all);
+}
+
+function renderKPIs(all){
+  const totalClients = all.length;
+  const newClients = all.filter(r=>r.clientType==='جديد').length;
+  const renewClients = all.filter(r=>r.clientType==='تجديد').length;
+
+  const expected = FILTERED.finance.reduce((s,r)=>s+num(r.expectedAmount),0);
+  const disbursed = FILTERED.seniorOfficer.reduce((s,r)=>s+num(r.disbursedAmount),0)
+                   + FILTERED.geoOfficer.reduce((s,r)=>s+num(r.disbursedAmount),0);
+
+  const visits = all.filter(r=>r.location && String(r.location).trim() !== '').length;
+
+  const activeEmployees = new Set(all.map(r=>r.empOracle)).size;
+
+  const cards = [
+    {label:'إجمالي العملاء', value: totalClients, sub:`${newClients} جديد · ${renewClients} تجديد`, accent:COLORS.primary},
+    {label:'إجمالي المبلغ المتوقع (تمويل)', value: fmt(expected)+' ج.م', sub:`${FILTERED.finance.length} عملية تسويق`, accent:COLORS.gold},
+    {label:'إجمالي المبلغ المنصرف', value: fmt(disbursed)+' ج.م', sub:`${FILTERED.seniorOfficer.length + FILTERED.geoOfficer.length} عملية صرف`, accent:COLORS.success},
+    {label:'زيارات ميدانية بموقع محدد', value: visits, sub:`${activeEmployees} موظف نشط`, accent:COLORS.blue},
+  ];
+
+  el('kpiGrid').innerHTML = cards.map(c=>`
+    <div class="kpi-card" style="--accent:${c.accent}">
+      <div class="label">${c.label}</div>
+      <div class="value">${c.value}</div>
+      <div class="subvalue">${c.sub}</div>
+    </div>
+  `).join('');
+}
+
+function destroyChart(key){
+  if(charts[key]){ charts[key].destroy(); delete charts[key]; }
+}
+
+function baseOptions(extra){
+  return Object.assign({
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{ font:{ family:'Tajawal', size:11 }, color:'#12211f' } } }
+  }, extra||{});
+}
+
+function renderTrendChart(all){
+  destroyChart('trend');
+  const ctx = el('trendChart');
+  if(all.length === 0){
+    ctx.parentElement.innerHTML = '<div class="empty-chart">لا توجد بيانات كافية لعرض الاتجاه</div>';
+    return;
+  }
+  const byDay = {};
+  all.forEach(r=>{
+    const d = new Date(r.timestamp);
+    if(isNaN(d)) return;
+    const key = d.toLocaleDateString('ar-EG', {month:'short', day:'numeric'});
+    byDay[key] = (byDay[key]||0) + 1;
+  });
+  const labels = Object.keys(byDay);
+  const values = Object.values(byDay);
+
+  charts.trend = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{
+      label:'عدد العملاء',
+      data: values,
+      borderColor: COLORS.primary,
+      backgroundColor: 'rgba(11,61,58,.08)',
+      tension:.35, fill:true, pointRadius:3, pointBackgroundColor: COLORS.gold
+    }]},
+    options: baseOptions({ scales:{ x:{ ticks:{font:{family:'Tajawal', size:10}} }, y:{ beginAtZero:true, ticks:{ precision:0 } } } })
+  });
+}
+
+function renderRoleChart(){
+  destroyChart('role');
+  const ctx = el('roleChart');
+  const data = [FILTERED.finance.length, FILTERED.seniorOfficer.length, FILTERED.geoOfficer.length];
+  if(data.every(v=>v===0)){
+    ctx.parentElement.innerHTML = '<div class="empty-chart">لا توجد بيانات</div>';
+    return;
+  }
+  charts.role = new Chart(ctx, {
+    type:'doughnut',
+    data:{
+      labels:['تمويل','مسئول أول','مسئول جغرافي'],
+      datasets:[{ data, backgroundColor:[COLORS.gold, COLORS.primary, COLORS.purple], borderWidth:0 }]
+    },
+    options: baseOptions({ cutout:'62%' })
+  });
+}
+
+function renderClientTypeChart(all){
+  destroyChart('clientType');
+  const ctx = el('clientTypeChart');
+  const newC = all.filter(r=>r.clientType==='جديد').length;
+  const renewC = all.filter(r=>r.clientType==='تجديد').length;
+  if(newC + renewC === 0){
+    ctx.parentElement.innerHTML = '<div class="empty-chart">لا توجد بيانات</div>';
+    return;
+  }
+  charts.clientType = new Chart(ctx, {
+    type:'pie',
+    data:{ labels:['جديد','تجديد'], datasets:[{ data:[newC, renewC], backgroundColor:[COLORS.success, COLORS.blue], borderWidth:0 }] },
+    options: baseOptions()
+  });
+}
+
+function renderMarketingTypeChart(){
+  destroyChart('marketingType');
+  const wrap = el('marketingTypeWrap');
+  const rows = FILTERED.finance;
+  if(rows.length === 0){
+    wrap.innerHTML = '<div class="empty-chart">لا توجد بيانات (خاص بفئة التمويل)</div>';
+    return;
+  }
+  wrap.innerHTML = '<canvas id="marketingTypeChart"></canvas>';
+  const counts = {};
+  rows.forEach(r=>{ const t = r.marketingType || 'غير محدد'; counts[t] = (counts[t]||0)+1; });
+  charts.marketingType = new Chart(el('marketingTypeChart'), {
+    type:'bar',
+    data:{
+      labels:Object.keys(counts),
+      datasets:[{ data:Object.values(counts), backgroundColor:[COLORS.gold, COLORS.primary, COLORS.blue, COLORS.purple], borderRadius:6 }]
+    },
+    options: baseOptions({
+      indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{ x:{ beginAtZero:true, ticks:{precision:0} }, y:{ ticks:{font:{family:'Tajawal', size:10.5}} } }
+    })
+  });
+}
+
+function renderAmountsChart(){
+  destroyChart('amounts');
+  const ctx = el('amountsChart');
+  const expected = FILTERED.finance.reduce((s,r)=>s+num(r.expectedAmount),0);
+  const disbursed = FILTERED.seniorOfficer.reduce((s,r)=>s+num(r.disbursedAmount),0)
+                   + FILTERED.geoOfficer.reduce((s,r)=>s+num(r.disbursedAmount),0);
+  if(expected + disbursed === 0){
+    ctx.parentElement.innerHTML = '<div class="empty-chart">لا توجد بيانات</div>';
+    return;
+  }
+  charts.amounts = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:['متوقع','منصرف'],
+      datasets:[{ data:[expected, disbursed], backgroundColor:[COLORS.gold, COLORS.success], borderRadius:8 }]
+    },
+    options: baseOptions({ plugins:{legend:{display:false}}, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>fmt(v) } } } })
+  });
+}
+
+function renderLeaderboard(all){
+  const counts = {};
+  all.forEach(r=>{
+    const key = r.empName || r.empOracle || 'غير معروف';
+    counts[key] = (counts[key]||0)+1;
+  });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const max = sorted.length ? sorted[0][1] : 1;
+
+  if(sorted.length === 0){
+    el('leaderboardList').innerHTML = '<div class="empty-chart" style="height:120px;">لا توجد بيانات</div>';
+    return;
+  }
+
+  el('leaderboardList').innerHTML = sorted.map(([name,count],i)=>`
+    <div class="leaderboard-item">
+      <div class="row1">
+        <span>${i+1}. ${esc(name)}</span>
+        <span style="color:var(--gold);">${count}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(count/max*100).toFixed(0)}%"></div></div>
+    </div>
+  `).join('');
+}
+
+function renderVisitsChart(all){
+  destroyChart('visits');
+  const ctx = el('visitsChart');
+  const withLoc = all.filter(r=>r.location && String(r.location).trim() !== '').length;
+  const withoutLoc = all.length - withLoc;
+  if(all.length === 0){
+    ctx.parentElement.innerHTML = '<div class="empty-chart">لا توجد بيانات</div>';
+    return;
+  }
+  charts.visits = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels:['بموقع محدد','بدون موقع'], datasets:[{ data:[withLoc, withoutLoc], backgroundColor:[COLORS.primary, COLORS.muted+'55'], borderWidth:0 }] },
+    options: baseOptions({ cutout:'62%' })
+  });
+}
+
+function roleBadgeClass(role){
+  if(role === 'تمويل') return 'role-finance';
+  if(role === 'مسئول اول') return 'role-senior';
+  return 'role-geo';
+}
+
+function renderTable(all){
+  const rows = all.slice(0, 60); // most recent 60
+  el('rowCountPill').textContent = `${all.length} عملية`;
+
+  // desktop table
+  el('tableBody').innerHTML = rows.map(r=>{
+    const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleDateString('ar-EG') : '-';
+    const typeBadge = r.clientType === 'جديد' ? '<span class="badge new">جديد</span>' : (r.clientType === 'تجديد' ? '<span class="badge renew">تجديد</span>' : '-');
+    const roleBadge = `<span class="badge ${roleBadgeClass(r._role)}">${r._role}</span>`;
+    const amount = r._amount ? fmt(r._amount)+' ج.م' : '-';
+    const loc = r.location ? `<a class="loc-link" target="_blank" href="https://www.google.com/maps?q=${encodeURIComponent(r.location)}">عرض</a>` : '-';
+    return `
+      <tr>
+        <td>${dateStr}</td>
+        <td>${roleBadge}</td>
+        <td>${esc(r.empName) || '-'}</td>
+        <td>${esc(r.clientName) || '-'}</td>
+        <td>${esc(r.phone) || '-'}</td>
+        <td>${typeBadge}</td>
+        <td>${amount}</td>
+        <td>${loc}</td>
+      </tr>`;
+  }).join('') || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px;">لا توجد بيانات مطابقة للفلاتر</td></tr>`;
+
+  // mobile cards
+  el('mobileCards').innerHTML = rows.map(r=>{
+    const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleDateString('ar-EG') : '-';
+    const typeBadge = r.clientType === 'جديد' ? '<span class="badge new">جديد</span>' : (r.clientType === 'تجديد' ? '<span class="badge renew">تجديد</span>' : '');
+    const roleBadge = `<span class="badge ${roleBadgeClass(r._role)}">${r._role}</span>`;
+    const amount = r._amount ? fmt(r._amount)+' ج.م' : '-';
+    const loc = r.location ? `<a class="loc-link" target="_blank" href="https://www.google.com/maps?q=${encodeURIComponent(r.location)}">📍 عرض الموقع</a>` : '';
+    return `
+      <div class="entry-card">
+        <div class="top-row">
+          <span class="cname">${esc(r.clientName) || 'بدون اسم'}</span>
+          ${roleBadge}
+        </div>
+        <div class="meta">
+          <span><b>${esc(r.empName) || '-'}</b></span>
+          <span>${dateStr}</span>
+          ${typeBadge}
+          <span><b>${amount}</b></span>
+        </div>
+        <div class="meta">
+          <span>${esc(r.phone) || ''}</span>
+          ${loc}
+        </div>
+      </div>`;
+  }).join('') || `<div class="empty-chart" style="height:80px;">لا توجد بيانات مطابقة للفلاتر</div>`;
+}
+
+loadData();
+</script>
+</body>
+</html>
